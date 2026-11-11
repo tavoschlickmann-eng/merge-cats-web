@@ -109,6 +109,49 @@ body {
 	to { margin-left: 65%; }
 }
 
+/* Celular em pé: aviso para girar (o jogo é em paisagem e fica pausado enquanto isso). */
+#rotate {
+	position: fixed;
+	inset: 0;
+	z-index: 10;
+	display: none;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 6vh;
+	background-color: #1a1c21;
+	font-family: 'Passion One', 'Arial Black', sans-serif;
+	text-align: center;
+}
+
+#rotate-phone {
+	width: 28vw;
+	height: 46vw;
+	border: 2.4vw solid #f5a623;
+	border-radius: 5vw;
+	box-shadow: 0 0 0 1.2vw #3b1d10;
+	animation: turn 2.2s ease-in-out infinite;
+}
+
+#rotate-text {
+	color: #ffe066;
+	font-size: 9vw;
+	line-height: 1.15;
+	text-shadow: -0.6vw -0.6vw 0 #3b1d10, 0.6vw -0.6vw 0 #3b1d10, -0.6vw 0.6vw 0 #3b1d10, 0.6vw 0.6vw 0 #3b1d10;
+}
+
+@keyframes turn {
+	0%, 20% { transform: rotate(0deg); }
+	55%, 80% { transform: rotate(-90deg); }
+	100% { transform: rotate(0deg); }
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+	#rotate {
+		display: flex;
+	}
+}
+
 #status-notice {
 	position: absolute;
 	left: 50%;
@@ -141,6 +184,11 @@ body {
 			Seu navegador não tem suporte a JavaScript.
 		</noscript>
 
+		<div id="rotate">
+			<div id="rotate-phone"></div>
+			<div id="rotate-text">Gire o celular<br>para jogar</div>
+		</div>
+
 		<div id="status">
 			<img id="status-splash" src="index.png" alt="">
 			<div id="status-shade"></div>
@@ -153,7 +201,7 @@ body {
 
 		<script src="index.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":38740416,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":38752004,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
