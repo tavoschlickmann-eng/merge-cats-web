@@ -217,6 +217,32 @@ body {
 	}
 }
 
+/* Botão de tela cheia: só em tela de toque, sempre que o jogo não está em tela cheia. Fica no
+   canto esquerdo, que costuma cair na faixa preta ao lado do jogo. */
+#fullscreen {
+	position: fixed;
+	left: 6px;
+	bottom: 6px;
+	z-index: 5;
+	display: none;
+	width: 42px;
+	height: 42px;
+	padding: 0;
+	align-items: center;
+	justify-content: center;
+	border: 3px solid #3b1d10;
+	border-radius: 12px;
+	background: linear-gradient(to bottom, #ffd04a, #f59a1b);
+	box-shadow: 0 3px 0 rgba(0, 0, 0, 0.4);
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+}
+
+#fullscreen svg {
+	width: 24px;
+	height: 24px;
+}
+
 #status-notice {
 	position: absolute;
 	left: 50%;
@@ -249,6 +275,12 @@ body {
 			Seu navegador não tem suporte a JavaScript.
 		</noscript>
 
+		<button id="fullscreen" type="button" aria-label="Tela cheia" title="Tela cheia">
+			<svg viewBox="0 0 24 24" fill="none" stroke="#3b1d10" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>
+			</svg>
+		</button>
+
 		<div id="rotate">
 			<div class="rotate-phone"></div>
 			<div class="rotate-text">Gire o celular<br>para jogar</div>
@@ -269,7 +301,7 @@ body {
 		</div>
 
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":39236544,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":38757300,"index.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 
 // Versão da publicação: o script tools/publicar_web.ps1 grava em versao.txt um código que muda
@@ -304,6 +336,59 @@ const GODOT_THREADS_ENABLED = false;
 		.then((resposta) => (resposta.ok ? resposta.text() : ''))
 		.then((texto) => texto.trim(), () => '')
 		.then(carregarMotor);
+}());
+
+// Tela cheia no celular/tablet: entra sozinha no primeiro toque (o navegador só deixa pedir dentro
+// de um toque) e, sempre que o jogo sai da tela cheia, aparece o botão para voltar. Em tela cheia o
+// celular também trava deitado, quando o navegador permite.
+(function () {
+	const botao = document.getElementById('fullscreen');
+	const raiz = document.documentElement;
+	const toque = window.matchMedia('(pointer: coarse)').matches;
+	const pedir = raiz.requestFullscreen || raiz.webkitRequestFullscreen;
+	const permitido = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+	if (!toque || !pedir || !permitido) {
+		return;
+	}
+	let pediuSozinho = false;
+
+	function emTelaCheia() {
+		return Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+	}
+
+	function atualizar() {
+		botao.style.display = emTelaCheia() ? 'none' : 'flex';
+	}
+
+	function entrar() {
+		try {
+			const pedido = pedir.call(raiz, { navigationUI: 'hide' });
+			if (pedido && pedido.then) {
+				pedido.then(() => {
+					if (screen.orientation && screen.orientation.lock) {
+						screen.orientation.lock('landscape').catch(() => {});
+					}
+				}).catch(() => {});
+			}
+		} catch (err) {
+			console.warn('Tela cheia indisponível:', err);
+		}
+	}
+
+	botao.addEventListener('click', (event) => {
+		event.stopPropagation();
+		pediuSozinho = true;
+		entrar();
+	});
+	document.addEventListener('pointerup', (event) => {
+		if (!pediuSozinho && event.pointerType !== 'mouse' && !emTelaCheia()) {
+			pediuSozinho = true;
+			entrar();
+		}
+	}, true);
+	document.addEventListener('fullscreenchange', atualizar);
+	document.addEventListener('webkitfullscreenchange', atualizar);
+	atualizar();
 }());
 
 function iniciarJogo() {
