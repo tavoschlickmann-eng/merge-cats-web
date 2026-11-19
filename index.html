@@ -338,6 +338,60 @@ const GODOT_THREADS_ENABLED = false;
 		.then(carregarMotor);
 }());
 
+// Som em segundo plano: quando a página fica oculta (outra aba, app minimizado, tela bloqueada), o
+// navegador para de desenhar o jogo, mas o áudio continua tocando. Por isso guardamos os contextos
+// de áudio que o motor cria e os suspendemos enquanto a página está oculta; ao voltar, retomamos só
+// os que nós suspendemos (antes do primeiro toque o navegador já deixa o áudio parado).
+(function () {
+	const Original = window.AudioContext || window.webkitAudioContext;
+	if (!Original) {
+		return;
+	}
+	const contextos = [];
+	class ContextoAcompanhado extends Original {
+		constructor(...args) {
+			super(...args);
+			contextos.push(this);
+		}
+	}
+	window.AudioContext = ContextoAcompanhado;
+	if (window.webkitAudioContext) {
+		window.webkitAudioContext = ContextoAcompanhado;
+	}
+
+	function pausar() {
+		for (const ctx of contextos) {
+			if (ctx.state === 'running') {
+				ctx.pausadoOculto = true;
+				ctx.suspend().catch(() => {});
+			}
+		}
+	}
+
+	function retomar() {
+		for (const ctx of contextos) {
+			if (ctx.pausadoOculto) {
+				ctx.pausadoOculto = false;
+				ctx.resume().catch(() => {});
+			}
+		}
+	}
+
+	document.addEventListener('visibilitychange', () => {
+		if (document.hidden) {
+			pausar();
+		} else {
+			retomar();
+		}
+	});
+	window.addEventListener('pagehide', pausar);
+	window.addEventListener('pageshow', () => {
+		if (!document.hidden) {
+			retomar();
+		}
+	});
+}());
+
 // Tela cheia no celular/tablet: entra sozinha no primeiro toque (o navegador só deixa pedir dentro
 // de um toque) e, sempre que o jogo sai da tela cheia, aparece o botão para voltar. Em tela cheia o
 // celular também trava deitado, quando o navegador permite.
